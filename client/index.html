@@ -1,0 +1,90 @@
+<canvas id="ctx" width="500" height="500" style="border:1px solid #000000;"></canvas>
+ 
+<div id="chat-text" style="width:500px;height:200px;overflow-y:scroll">
+
+	<div> Юзеры, здесь можно поболтать! </div>
+
+</div>
+ 
+
+<form id="chat-form">
+
+	<input id="chat-input" type="text" style="width:500px"></input>
+
+</form>
+ 
+<script src="https://cdn.socket.io/socket.io-3.0.3.min.js"> // подключение библиотеки socket</script> 
+
+<script>
+	
+	
+	var userName = prompt ('Как тебя зовут?'); // ввод имени для чата
+	var chatText = document.getElementById('chat-text'); // форма для вывода текста сообщений пользователей
+	var chatInput = document.getElementById('chat-input'); // переменная для внесения теккущего сообщения
+	var chatForm = document.getElementById('chat-form'); // форма для занесения текста текущего сообщения
+	var ctx = document.getElementById("ctx").getContext("2d"); // подключение канваса
+	ctx.font = '30px Arial'; // установка шрифта для отображения на канвасе
+	 
+	// var sendName = function() {
+	// 	socket.emit('blabla',
+	// 	 {name: userName
+	// 	});
+	// } // отправка имени на сервер
+		// sendName(); // исполнение функции отправки имени
+	// var bumName = socket.on('transformName', function(data) {
+	// 	var warHim = data.pinch;
+	// 	ctx.fillText(warHim, 20, 40, 480);
+	// });
+
+ 
+	var socket = io();
+ 
+	socket.on('newPositions',function(data){ // обно
+		ctx.clearRect(0,0,500,500); // очистка поля
+		for(var i = 0 ; i < data.player.length; i++) // добавление данных по игрокам на очищенное поле
+			ctx.fillText(data.player[i].number,data.player[i].x,data.player[i].y);		
+ 
+		for(var i = 0 ; i < data.bullet.length; i++) // добавление данных по пулькам на очищенное поле
+			ctx.fillRect(data.bullet[i].x-5,data.bullet[i].y-5,10,10);		
+	});
+ 
+	socket.on('addToChat',function(data){ //добавление данных в окно чата
+		chatText.innerHTML += '<div>' + data + '</div>'; 
+	});
+	socket.on('evalAnswer',function(data){ // вывод в консоль данных, после отладки
+		console.log(data);
+	});
+ 
+ 
+	chatForm.onsubmit = function(e){
+		e.preventDefault();
+		if(chatInput.value[0] === '/') // сообщение для активации дебага
+			socket.emit('evalServer',chatInput.value.slice(1));
+		else
+			socket.emit('sendMsgToServer', {myText: chatInput.value, myName: userName}); // отправка массива с имене и мэсседжем
+		chatInput.value = '';	// обнуление текста в окне чата	
+	}
+ 
+	document.onkeydown = function(event){
+		if(event.keyCode === 68)	//d
+			socket.emit('keyPress',{inputId:'right',state:true});
+		else if(event.keyCode === 83)	//s
+			socket.emit('keyPress',{inputId:'down',state:true});
+		else if(event.keyCode === 65) //a
+			socket.emit('keyPress',{inputId:'left',state:true});
+		else if(event.keyCode === 87) // w
+			socket.emit('keyPress',{inputId:'up',state:true});
+ 
+	}
+	document.onkeyup = function(event){
+		if(event.keyCode === 68)	//d
+			socket.emit('keyPress',{inputId:'right',state:false});
+		else if(event.keyCode === 83)	//s
+			socket.emit('keyPress',{inputId:'down',state:false});
+		else if(event.keyCode === 65) //a
+			socket.emit('keyPress',{inputId:'left',state:false});
+		else if(event.keyCode === 87) // w
+			socket.emit('keyPress',{inputId:'up',state:false});
+	}
+  
+</script	>
